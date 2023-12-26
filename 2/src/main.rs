@@ -10,6 +10,27 @@ struct Cube {
     amount: u32
 }
 
+impl PartialEq for Cube {
+    fn eq(&self, other: &Self) -> bool {
+        self.amount == other.amount
+    }
+}
+
+impl PartialOrd for Cube {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.amount.cmp(&other.amount))
+    }
+}
+
+impl Ord for Cube {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.amount.cmp(&other.amount)
+    }
+}
+
+impl Eq for Cube {}
+
+#[derive(PartialEq)]
 enum CubeColor {
     RED,
     GREEN,
@@ -34,17 +55,20 @@ fn main() {
     let file = fs::read("./src/input.txt").unwrap();
     let games = parse_file(file);
     let mut valid_games: Vec<u32> = vec![];
+    let mut total_power: u32 = 0;
 
     games.iter().for_each(|game: &Game| {
         if validate_game(game) {
             valid_games.push(game.id)
         }
+
+        total_power = total_power + get_minimum_amount_cube_set(game);
     });
 
     let valid_games_total: u32 = valid_games.iter().sum();
 
-    println!("{}", valid_games_total)
-
+    println!("{}", valid_games_total);
+    println!("{}", total_power);
 }
 
 fn parse_file(file: Vec<u8>) -> Vec<Game> {
@@ -140,4 +164,31 @@ fn get_cube_color(color: &str) -> CubeColor {
         "green" => CubeColor::GREEN,
         &_ => CubeColor::BLUE,
     }
+}
+
+// Retrieve a set of cubes with the minium amount needed for the game
+fn get_minimum_amount_cube_set(game: &Game) -> u32 {
+    let red_cubes = get_cubes_by_color(&game.sets, CubeColor::RED);
+    let blue_cubes = get_cubes_by_color(&game.sets, CubeColor::BLUE);
+    let green_cubes = get_cubes_by_color(&game.sets, CubeColor::GREEN);
+
+    let max_red = red_cubes.iter().max().unwrap();
+    let max_blue = blue_cubes.iter().max().unwrap();
+    let max_green = green_cubes.iter().max().unwrap();
+
+    let power = max_red.amount * max_blue.amount * max_green.amount;
+
+    return power
+}
+
+fn get_cubes_by_color(cubes: &Vec<Cube>, color: CubeColor) -> Vec<&Cube> {
+    let mut filtered_cubes: Vec<&Cube> = vec![];
+
+    for cube in cubes {
+        if cube.color == color {
+            filtered_cubes.push(cube)
+        }
+    }
+
+    return filtered_cubes
 }
