@@ -11,7 +11,7 @@ struct Area {
     area_type: AreaType
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum AreaType {
     Number,
     Symbol,
@@ -35,17 +35,53 @@ fn parse_file_into_grid(file: Vec<u8>) -> Grid {
     for (y, line) in lines.enumerate() {
         let line_string = line.unwrap();
         let characters = line_string.chars();
+        let mut temp_number = String::from("");
 
         for (x, char) in characters.clone().enumerate() {
             let content = String::from(char);
-            let char_area_type = assign_area_type(content.as_str());
+            let char_area_type: AreaType = assign_area_type(content.as_str());
+            let mut next_char = 'a';
 
-            areas.push(Area {
-                y,
-                x, 
-                content: content.clone(),
-                area_type: char_area_type
-            });
+            match char_area_type {
+                AreaType::Number => {
+                    if x < characters.clone().count() - 1 {
+                        next_char = characters.clone().nth(x + 1).unwrap();
+                    }
+
+                    let next_char_area_type: AreaType = assign_area_type(next_char.to_string().as_str());
+
+                    match next_char_area_type {
+                        AreaType::Number => {
+                            temp_number = temp_number + content.as_str()
+                        }
+
+                        _ => {
+                            temp_number = temp_number + content.as_str();
+
+                            areas.push(Area {
+                                y,
+                                x,
+                                content: temp_number.clone(),
+                                area_type: char_area_type
+                            });
+
+                            temp_number = String::from("")
+                        }
+                    }
+
+                }
+
+                _ => {
+                    areas.push(Area {
+                        y,
+                        x, 
+                        content: content.clone(),
+                        area_type: char_area_type
+                    });
+                }
+            }
+
+            println!("{}", temp_number);
         }
     }
 
